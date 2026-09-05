@@ -1,0 +1,78 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EmailStatus {
+  SCHEDULED
+  PROCESSING
+  SENT
+  FAILED
+}
+
+model User {
+  id        String   @id @default(uuid())
+  googleId  String?  @unique
+  name      String
+  email     String   @unique
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  emails          Email[]
+  slackConnection SlackConnection?
+
+  @@map("users")
+}
+
+model SlackConnection {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  teamId      String
+  teamName    String
+  slackUserId String
+  channelId   String?
+  accessToken String   @db.Text
+  scope       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([teamId])
+  @@index([userId])
+  @@map("slack_connections")
+}
+
+model Email {
+  id                  String      @id @default(uuid())
+  userId              String
+  user                User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  senderEmail         String
+  recipient           String
+  subject             String
+  body                String      @db.Text
+  scheduledAt         DateTime
+  sentAt              DateTime?
+  status              EmailStatus @default(SCHEDULED)
+  providerMessageId   String?
+  previewUrl          String?
+  errorMessage        String?     @db.Text
+  attemptCount        Int         @default(0)
+  rateLimitDeferrals  Int         @default(0)
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([scheduledAt])
+  @@index([recipient])
+  @@map("emails")
+}
+
