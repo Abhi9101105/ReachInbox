@@ -75,12 +75,21 @@ export class SessionService {
 
   /**
    * Standard session cookie options matching security requirements.
+   *
+   * Production (cross-origin Vercel → Render):
+   *   SameSite=none is required so the browser sends the cookie on cross-origin
+   *   fetch requests (credentials: 'include') from the Vercel frontend to the
+   *   Render backend. SameSite=none MUST be paired with Secure=true.
+   *
+   * Development (same-origin localhost):
+   *   SameSite=lax is sufficient and does not require HTTPS.
    */
   getCookieOptions(): CookieOptions {
+    const isProduction = config.nodeEnv === 'production';
     return {
       httpOnly: true,
-      secure: config.nodeEnv === 'production',
-      sameSite: 'lax',
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
       maxAge: SESSION_TTL_SECONDS * 1000,
       path: '/',
     };
@@ -88,12 +97,17 @@ export class SessionService {
 
   /**
    * Temporary cookie options for browser-bound OAuth state correlation.
+   *
+   * In production the OAuth flow crosses origins (Vercel initiates → Google →
+   * Render callback), so the state cookie must also be SameSite=none+Secure.
+   * In development SameSite=lax is fine.
    */
   getOAuthStateCookieOptions(): CookieOptions {
+    const isProduction = config.nodeEnv === 'production';
     return {
       httpOnly: true,
-      secure: config.nodeEnv === 'production',
-      sameSite: 'lax',
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
       maxAge: STATE_TTL_SECONDS * 1000,
       path: '/',
     };

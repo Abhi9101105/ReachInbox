@@ -12,10 +12,26 @@ import { emailQueue } from './queues/email.queue';
 export function createApp(): Express {
   const app = express();
 
-  // Core Middleware
+  // Allowed origins: production Vercel frontend + local dev servers.
+  // FRONTEND_URL on Render must be set to the exact Vercel URL (no trailing slash).
+  const devOrigins = ['http://localhost:5173', 'http://127.0.0.1:5173'];
+  const allowedOrigins = Array.from(
+    new Set([
+      config.frontendUrl.replace(/\/$/, ''), // strip any trailing slash
+      ...devOrigins,
+    ])
+  );
+
   app.use(
     cors({
-      origin: [config.frontendUrl, 'http://localhost:5173', 'http://127.0.0.1:5173'],
+      origin: (origin, callback) => {
+        // Allow server-to-server requests (no Origin header) and allowed origins
+        if (!origin || allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error(`CORS: origin '${origin}' not allowed`));
+        }
+      },
       credentials: true,
     })
   );
