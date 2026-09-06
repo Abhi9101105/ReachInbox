@@ -97,8 +97,8 @@ async function runPhase5Suite() {
       };
     });
 
-    // ---- B2. Elasticsearch Client Authentication Modes -------------------
-    await logResult('B2. Elasticsearch Authentication Configuration (Unauthenticated vs API Key)', async () => {
+    // ---- B2. Elasticsearch Client Authentication Modes & Serverless Fallback ---
+    await logResult('B2. Elasticsearch Authentication & Serverless Health Fallback', async () => {
       const { Client } = await import('@elastic/elasticsearch');
 
       // 1. Unauthenticated Client (Local Docker default)
@@ -118,6 +118,12 @@ async function runPhase5Suite() {
         requestTimeout: 10000,
       });
 
+      // 3. Verify healthCheck behavior on current service instance
+      const currentHealth = await elasticsearchService.healthCheck();
+      if (currentHealth.status !== 'connected') {
+        throw new Error('Expected healthCheck to return connected');
+      }
+
       await unauthClient.close();
       await authClient.close();
 
@@ -125,6 +131,8 @@ async function runPhase5Suite() {
         unauthenticatedModeSupported: true,
         cloudApiKeyModeSupported: true,
         defaultApiKeyEmpty: config.elasticsearch.apiKey === '',
+        healthCheckStatus: currentHealth.status,
+        clusterStatus: currentHealth.clusterStatus,
       };
     });
 

@@ -115,6 +115,7 @@ export class ElasticsearchService {
 
   /**
    * Check Elasticsearch cluster health and response latency.
+   * Compatible with both standard Elasticsearch clusters and Elastic Cloud Serverless.
    */
   async healthCheck(): Promise<{
     status: 'connected' | 'disconnected';
@@ -124,6 +125,7 @@ export class ElasticsearchService {
   }> {
     const start = Date.now();
     try {
+      // 1. Primary check: cluster health (works on standard/Docker Elasticsearch)
       const health = await this.client.cluster.health({});
       const latencyMs = Date.now() - start;
       return {
@@ -131,10 +133,25 @@ export class ElasticsearchService {
         latencyMs,
         clusterStatus: health.status,
       };
-    } catch (err) {
+    } catch (clusterErr) {
+      // 2. Serverless fallback: ping check (Elastic Cloud Serverless does not support _cluster/health)
+      try {
+        const pingOk = await this.client.ping();
+        if (pingOk) {
+          const latencyMs = Date.now() - start;
+          return {
+            status: 'connected',
+            latencyMs,
+            clusterStatus: 'serverless',
+          };
+        }
+      } catch {
+        // Fall through to disconnected
+      }
+
       return {
         status: 'disconnected',
-        error: (err as Error).message,
+        error: (clusterErr as Error).message,
       };
     }
   }
@@ -149,8 +166,6 @@ export class ElasticsearchService {
         await this.client.indices.create({
           index: this.indexName,
           settings: {
-            number_of_shards: 1,
-            number_of_replicas: 0,
             analysis: {
               analyzer: {
                 email_analyzer: {
