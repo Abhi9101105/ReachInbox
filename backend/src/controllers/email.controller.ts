@@ -229,7 +229,7 @@ export async function scheduleEmailBatch(
 
     const jobOpts = computedDelay > 0 ? { delay: computedDelay } : undefined;
     await Promise.all(
-      createdEmails.map((email) => scheduleEmailJob(email.id, jobOpts))
+      createdEmails.map((email: { id: string }) => scheduleEmailJob(email.id, jobOpts))
     );
 
     elasticsearchService.bulkIndexEmails(createdEmails).catch((err) =>

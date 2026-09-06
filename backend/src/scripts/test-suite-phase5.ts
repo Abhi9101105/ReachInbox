@@ -415,7 +415,7 @@ async function runPhase5Suite() {
 
       // Clean up PostgreSQL records
       await prisma.email.deleteMany({
-        where: { id: { in: pgEmails.map((e) => e.id) } },
+        where: { id: { in: pgEmails.map((e: { id: string }) => e.id) } },
       });
 
       return {

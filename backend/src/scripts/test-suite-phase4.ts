@@ -347,7 +347,7 @@ async function runPhase4Suite() {
             });
           })
         );
-        allEmailIds.push(...created.map((e) => e.id));
+        allEmailIds.push(...created.map((e: { id: string }) => e.id));
       }
 
       // Queue all as delayed BullMQ jobs (60s delay so they won't fire)

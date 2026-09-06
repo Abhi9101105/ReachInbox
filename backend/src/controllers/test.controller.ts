@@ -185,7 +185,7 @@ export async function scheduleTestEmailBatch(
     // Queue all BullMQ jobs
     const jobOpts = computedDelay > 0 ? { delay: computedDelay } : undefined;
     const jobResults = await Promise.all(
-      createdEmails.map((email) => scheduleEmailJob(email.id, jobOpts))
+      createdEmails.map((email: { id: string }) => scheduleEmailJob(email.id, jobOpts))
     );
 
     // Asynchronously bulk index into Elasticsearch (resilient)
@@ -196,7 +196,7 @@ export async function scheduleTestEmailBatch(
     res.status(201).json({
       success: true,
       count: createdEmails.length,
-      emailIds: createdEmails.map((e) => e.id),
+      emailIds: createdEmails.map((e: { id: string }) => e.id),
       jobIds: jobResults.map((j) => j.id),
       scheduledAt: computedScheduledAt.toISOString(),
       ...(computedDelay > 0 && { delayMs: computedDelay }),
