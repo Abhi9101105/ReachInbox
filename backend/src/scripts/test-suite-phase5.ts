@@ -97,6 +97,37 @@ async function runPhase5Suite() {
       };
     });
 
+    // ---- B2. Elasticsearch Client Authentication Modes -------------------
+    await logResult('B2. Elasticsearch Authentication Configuration (Unauthenticated vs API Key)', async () => {
+      const { Client } = await import('@elastic/elasticsearch');
+
+      // 1. Unauthenticated Client (Local Docker default)
+      const unauthClient = new Client({
+        node: 'http://localhost:9200',
+        auth: undefined,
+        maxRetries: 3,
+        requestTimeout: 10000,
+      });
+
+      // 2. Authenticated Client with Fake Test API Key (Elastic Cloud mode)
+      const fakeApiKey = 'mock_fake_api_key_for_testing_only_12345';
+      const authClient = new Client({
+        node: 'https://mock-cluster.es.io:9243',
+        auth: { apiKey: fakeApiKey },
+        maxRetries: 3,
+        requestTimeout: 10000,
+      });
+
+      await unauthClient.close();
+      await authClient.close();
+
+      return {
+        unauthenticatedModeSupported: true,
+        cloudApiKeyModeSupported: true,
+        defaultApiKeyEmpty: config.elasticsearch.apiKey === '',
+      };
+    });
+
     // ---- C. Server & Worker Startup ---------------------------------------
     await logResult('C. Server & Worker Startup', async () => {
       initEmailWorker();

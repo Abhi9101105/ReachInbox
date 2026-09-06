@@ -21,6 +21,7 @@ interface RateLimitConfig {
 interface ElasticsearchConfig {
   url: string;
   index: string;
+  apiKey?: string;
 }
 
 interface GoogleOAuthConfig {
@@ -90,6 +91,7 @@ export const config: Config = {
   elasticsearch: {
     url: getEnvVar('ELASTICSEARCH_URL', 'http://localhost:9200'),
     index: getEnvVar('ELASTICSEARCH_INDEX', 'emails'),
+    apiKey: getEnvVar('ELASTICSEARCH_API_KEY', ''),
   },
   google: {
     clientId: getEnvVar('GOOGLE_CLIENT_ID', ''),

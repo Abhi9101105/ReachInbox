@@ -87,6 +87,7 @@ export class ElasticsearchService {
     this.indexName = config.elasticsearch.index;
     this.client = new Client({
       node: config.elasticsearch.url,
+      auth: config.elasticsearch.apiKey ? { apiKey: config.elasticsearch.apiKey } : undefined,
       maxRetries: 3,
       requestTimeout: 10000,
     });
